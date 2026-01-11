@@ -112,7 +112,7 @@ background-color: rgb(13, 13, 13);
         <enum>Qt::LayoutDirection::LeftToRight</enum>
        </property>
        <attribute name="title">
-        <string>Orders</string>
+        <string>Prescript Settings</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
@@ -124,7 +124,7 @@ background-color: rgb(13, 13, 13);
            <string notr="true">font: 300 32pt &quot;Footlight MT&quot;;</string>
           </property>
           <property name="text">
-           <string>【 Orders 】</string>
+           <string>【 Prescripts 】</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -267,7 +267,7 @@ padding: 5px 10px;        /* Adds space inside so text doesn't hit the curve */
 </string>
              </property>
              <property name="placeholderText">
-              <string>Type your 'Order' here...</string>
+              <string>Type your 'Prescript' here...</string>
              </property>
             </widget>
            </item>
@@ -346,7 +346,7 @@ padding: 5px 10px;        /* Adds space inside so text doesn't hit the curve */
 color: white;</string>
              </property>
              <property name="text">
-              <string>Delete Selected Order</string>
+              <string>Delete Selected Prescript</string>
              </property>
             </widget>
            </item>
@@ -388,7 +388,7 @@ padding: 5px 10px;        /* Adds space inside so text doesn't hit the curve */
 color: white;</string>
              </property>
              <property name="text">
-              <string>Add Order</string>
+              <string>Add a Prescript</string>
              </property>
             </widget>
            </item>
