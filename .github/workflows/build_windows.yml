@@ -1,0 +1,51 @@
+name: Build All Platforms
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            sep: ';'   # Windows uses semicolon for paths
+            name: IndexOrder.exe
+            mime: application/vnd.microsoft.portable-executable
+          - os: ubuntu-latest
+            sep: ':'   # Linux uses colon
+            name: IndexOrder
+            mime: application/x-executable
+          - os: macos-latest
+            sep: ':'   # Mac uses colon
+            name: IndexOrder
+            mime: application/x-mach-binary
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install PySide6 pyinstaller
+
+    - name: Build Application
+      # We use the ${{ matrix.sep }} variable to handle the ; vs : difference
+      run: |
+        pyinstaller --noconsole --onefile --name "IndexOrder" --add-data "app_ui.ui${{ matrix.sep }}." --add-data "indexorderico.png${{ matrix.sep }}." main.py
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: IndexOrder-${{ matrix.os }}
+        path: dist/${{ matrix.name }}
