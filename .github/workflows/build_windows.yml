@@ -1,6 +1,6 @@
 name: Build and Release
 
-# Trigger ONLY when a tag starting with 'v' is pushed (e.g. v1.0, v2.3.1)
+# Trigger ONLY when a tag starting with 'v' is pushed (e.g. v1.0, v2.0)
 on:
   push:
     tags:
@@ -16,18 +16,26 @@ jobs:
     strategy:
       matrix:
         include:
+          # Windows Configuration
           - os: windows-latest
             sep: ';'
             binary_name: IndexOrder.exe
-            asset_name: IndexOrder-Windows.exe
+            final_name: IndexOrder-Windows.exe
+            is_windows: true
+          
+          # Linux Configuration
           - os: ubuntu-latest
             sep: ':'
             binary_name: IndexOrder
-            asset_name: IndexOrder-Linux
+            final_name: IndexOrder-Linux.zip
+            is_windows: false
+          
+          # MacOS Configuration
           - os: macos-latest
             sep: ':'
             binary_name: IndexOrder
-            asset_name: IndexOrder-macOS
+            final_name: IndexOrder-macOS.zip
+            is_windows: false
 
     steps:
     - name: Checkout Code
@@ -44,17 +52,29 @@ jobs:
         pip install PySide6 pyinstaller
 
     - name: Build Application
+      # This command dynamically switches between ; and : for file separators
       run: |
         pyinstaller --noconsole --onefile --name "IndexOrder" --add-data "app_ui.ui${{ matrix.sep }}." --add-data "indexorderico.png${{ matrix.sep }}." main.py
 
-    # Rename the output file to include the OS name (e.g., IndexOrder-Windows.exe)
-    - name: Rename Output
-      run: |
-        mv dist/${{ matrix.binary_name }} dist/${{ matrix.asset_name }}
+    # --- PACKAGING STEPS ---
 
-    # Create the Release and upload the file
-    - name: Release
+    # 1. Windows: Just rename the .exe so it's clear it is for Windows
+    - name: Prepare Windows Artifact
+      if: matrix.is_windows == true
+      run: |
+        mv dist/${{ matrix.binary_name }} dist/${{ matrix.final_name }}
+
+    # 2. Mac/Linux: Zip the binary to preserve 'chmod +x' permissions
+    # This prevents the "Text File" issue when downloading
+    - name: Prepare Unix Artifact
+      if: matrix.is_windows == false
+      run: |
+        cd dist
+        zip -r ${{ matrix.final_name }} ${{ matrix.binary_name }}
+
+    # --- RELEASE STEP ---
+    - name: Create Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: dist/${{ matrix.asset_name }}
+        files: dist/${{ matrix.final_name }}
