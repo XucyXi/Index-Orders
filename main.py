@@ -110,20 +110,6 @@ class IndexOrderApp(QMainWindow):
         # Turn translucency back ON so the square corners are invisible
         self.ui.setAttribute(Qt.WA_TranslucentBackground)
 
-        # --- APPLY SPECIFIC CORNER ROUNDING ---
-        # We inject CSS to define exactly which corners are round.
-        # We add a subtle dark border (#222) to make the edges smoother.
-        self.ui.setStyleSheet(self.ui.styleSheet() + """
-            QMainWindow {
-                background-color: black;
-                border-top-left-radius: 0px;
-                border-top-right-radius: 30px;
-                border-bottom-right-radius: 30px;
-                border-bottom-left-radius: 30px;
-                border: 2px solid #222; 
-            }
-        """)
-
         # --- 2. INSTALL DRAG FILTER ---
         self.drag_filter = DragFilter(self.ui)
         self.ui.tabWidget.installEventFilter(self.drag_filter)
