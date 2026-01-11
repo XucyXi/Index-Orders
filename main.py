@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QDialog, QVBoxLayout,
                                QListView)
 from PySide6.QtCore import Qt, QObject, QEvent
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QFontDatabase
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -216,6 +216,16 @@ class IndexOrderApp(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+
+    font_path = resource_path("FootlightMT.ttf")
+    font_id = QFontDatabase.addApplicationFont(font_path)
+
+    if font_id != -1:
+        font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
+        print(f"Success! Loaded font: {font_family}")
+    else:
+        print(f"Failed to load font at {font_path}")
+
     app.setWindowIcon(QIcon(resource_path("indexorderico.png")))    
 
     # --- CROSS-PLATFORM FIX ---

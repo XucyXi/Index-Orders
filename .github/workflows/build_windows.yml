@@ -54,7 +54,7 @@ jobs:
     - name: Build Application
       # This command dynamically switches between ; and : for file separators
       run: |
-        pyinstaller --noconsole --onefile --name "IndexOrder" --add-data "app_ui.ui${{ matrix.sep }}." --add-data "indexorderico.png${{ matrix.sep }}." main.py
+        pyinstaller --noconsole --onefile --name "IndexOrder" --add-data "app_ui.ui${{ matrix.sep }}." --add-data "indexorderico.png${{ matrix.sep }}." --add-data "FootlightMT.ttf${{ matrix.sep }}." main.py
 
     # --- PACKAGING STEPS ---
 
