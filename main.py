@@ -4,19 +4,19 @@ import random
 import os
 import ctypes
 from PySide6.QtWidgets import (QApplication, QMainWindow, QDialog, QVBoxLayout, 
-                               QLabel, QPushButton, QMessageBox)
+                               QLabel, QPushButton, QMessageBox, QListWidgetItem) # <--- Added QListWidgetItem
 from PySide6.QtCore import Qt
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtGui import QIcon
 
 def resource_path(relative_path):
-        """ Get absolute path to resource, works for dev and for PyInstaller """
-        try:
-            base_path = sys._MEIPASS
-        except Exception:
-            base_path = os.path.abspath(".")
-        
-        return os.path.join(base_path, relative_path)
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    
+    return os.path.join(base_path, relative_path)
 
 # --- Constants ---
 JSON_FILE = "orders.json"
@@ -34,7 +34,7 @@ class OrderCard(QDialog):
         self.setStyleSheet("""
             QDialog {
                 background-color: #000000;
-                border: 2px solid #FFFFFF; /* Gold border */
+                border: 2px solid #FFFFFF; 
                 border-radius: 15px;
             }
             QLabel {
@@ -74,7 +74,7 @@ class OrderCard(QDialog):
         # Close Button
         btn_close = QPushButton("Acknowledge")
         btn_close.setCursor(Qt.PointingHandCursor)
-        btn_close.clicked.connect(self.accept) # Closes the window
+        btn_close.clicked.connect(self.accept) 
         layout.addWidget(btn_close)
 
 # --- The Main App ---
@@ -99,63 +99,132 @@ class IndexOrderApp(QMainWindow):
         self.ui.btn_delete.clicked.connect(self.delete_order)
 
         # Initial Load
-        self.orders = []
+        self.orders = {"combat": [], "narrative": []}
         self.load_orders()
 
     def load_orders(self):
-        """Loads orders from JSON into the list widget and memory."""
+        """Loads orders and safely converts old lists to the new dictionary format."""
         self.ui.list_orders.clear()
+        
         if os.path.exists(JSON_FILE):
             with open(JSON_FILE, "r") as f:
                 try:
-                    self.orders = json.load(f)
+                    loaded_data = json.load(f)
+                    
+                    if isinstance(loaded_data, list):
+                        # MIGRATION: Old list detected
+                        self.orders["narrative"] = loaded_data
+                        self.orders["combat"] = []
+                        self.save_orders() 
+                    elif isinstance(loaded_data, dict):
+                        # Correct format detected
+                        self.orders = loaded_data
+                        
                 except json.JSONDecodeError:
-                    self.orders = []
+                    pass
         
-        # Add to the List Widget in Tab 2
-        for order in self.orders:
-            self.ui.list_orders.addItem(order)
+        # Populate List
+        if "combat" in self.orders:
+            for text in self.orders["combat"]:
+                self.add_item_to_list(text, "combat")
+            
+        if "narrative" in self.orders:
+            for text in self.orders["narrative"]:
+                self.add_item_to_list(text, "narrative")
 
     def save_orders(self):
         """Saves current memory list to JSON."""
         with open(JSON_FILE, "w") as f:
             json.dump(self.orders, f, indent=4)
 
+    # --- LOVELY HELPER FUNCTION RESTORED ---
+    def add_item_to_list(self, text, category):
+        """Creates a list item with a visual tag and hidden data for logic."""
+        # Visual Tag
+        if category == "combat":
+            display_text = f"[COMBAT] {text}"
+        else:
+            display_text = f"[STORY] {text}"
+        
+        item = QListWidgetItem(display_text)
+        
+        # HIDDEN DATA (Crucial for Deleting!)
+        # We store the original text and category inside the item itself
+        item.setData(Qt.UserRole, {"text": text, "category": category})
+        
+        self.ui.list_orders.addItem(item)
+
     def add_order(self):
-        """Adds text from input box to the list."""
+        """Adds text from input box to the selected category."""
         text = self.ui.input_new_order.text().strip()
-        if text:
-            self.orders.append(text)
-            self.ui.list_orders.addItem(text)
-            self.ui.input_new_order.clear()
-            self.save_orders()
+        if not text:
+            return
+
+        # Get Category from Dropdown
+        category_text = self.ui.combo_add_mode.currentText().lower() 
+        
+        # Add to memory
+        if category_text not in self.orders:
+            self.orders[category_text] = []
+        self.orders[category_text].append(text)
+        
+        # Add to UI
+        self.add_item_to_list(text, category_text)
+        
+        # Clear and Save
+        self.ui.input_new_order.clear()
+        self.save_orders()
 
     def delete_order(self):
-        """Deletes the selected item from the list."""
+        """Deletes the selected item using Hidden Data."""
         selected_items = self.ui.list_orders.selectedItems()
         if not selected_items:
             return
         
         for item in selected_items:
-            # Remove from Memory
-            self.orders.remove(item.text())
-            # Remove from UI
+            # 1. Retrieve the hidden data
+            data = item.data(Qt.UserRole)
+            
+            # If for some reason data is missing (old items), skip
+            if not data:
+                continue
+
+            real_text = data["text"]
+            category = data["category"]
+
+            # 2. Remove from the Dictionary (Memory)
+            if category in self.orders and real_text in self.orders[category]:
+                self.orders[category].remove(real_text)
+            
+            # 3. Remove from UI
             self.ui.list_orders.takeItem(self.ui.list_orders.row(item))
         
         self.save_orders()
 
     def generate_random_order(self):
-        """Picks a random order and shows the Card Window."""
-        if not self.orders:
-            QMessageBox.warning(self.ui, "Empty Deck", "There are no orders in the list!\nGo to the Orders tab to add some.")
+        """Picks a random order based on dropdown selection."""
+        
+        mode = self.ui.combo_gen_mode.currentText() # "Any", "Combat", "Narrative"
+        
+        pool = []
+        
+        if mode == "Any":
+            pool.extend(self.orders.get("combat", []))
+            pool.extend(self.orders.get("narrative", []))
+            
+        elif mode == "Combat":
+            pool.extend(self.orders.get("combat", []))
+            
+        elif mode == "Narrative":
+            pool.extend(self.orders.get("narrative", []))
+
+        if not pool:
+            QMessageBox.warning(self.ui, "Empty Deck", f"No {mode} cards found!\nGo to the Prescripts tab and add some.")
             return
 
-        # 1. Pick Random
-        chosen_order = random.choice(self.orders)
-
-        # 2. Show Custom Card Window
+        chosen_order = random.choice(pool)
         card_window = OrderCard(chosen_order)
-        card_window.exec()  # .exec() pauses the main app until card is closed
+        card_window.exec()
 
 if __name__ == "__main__":
     myappid = 'dnd.indexorders.app.v1'
