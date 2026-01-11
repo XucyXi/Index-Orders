@@ -215,9 +215,17 @@ class IndexOrderApp(QMainWindow):
         OrderCard(random.choice(pool)).exec()
 
 if __name__ == "__main__":
-    myappid = 'dnd.indexorders.app.v1'
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     app = QApplication(sys.argv)
-    app.setWindowIcon(QIcon(resource_path("indexorderico.png")))
+    app.setWindowIcon(QIcon(resource_path("indexorderico.png")))    
+
+    # --- CROSS-PLATFORM FIX ---
+    # Runs the taskbar fix only on Windows
+    if os.name == 'nt':
+        myappid = 'dnd.indexorders.app.v1'
+        try:
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        except AttributeError:
+            pass
+        
     window = IndexOrderApp()
     sys.exit(app.exec())
