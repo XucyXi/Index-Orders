@@ -1,29 +1,33 @@
-name: Build All Platforms
+name: Build and Release
 
+# Trigger ONLY when a tag starting with 'v' is pushed (e.g. v1.0, v2.3.1)
 on:
   push:
-    branches: [ "main" ]
-  workflow_dispatch:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
 
 jobs:
-  build:
-    name: Build on ${{ matrix.os }}
+  build-and-release:
+    name: Build for ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: windows-latest
-            sep: ';'   # Windows uses semicolon for paths
-            name: IndexOrder.exe
-            mime: application/vnd.microsoft.portable-executable
+            sep: ';'
+            binary_name: IndexOrder.exe
+            asset_name: IndexOrder-Windows.exe
           - os: ubuntu-latest
-            sep: ':'   # Linux uses colon
-            name: IndexOrder
-            mime: application/x-executable
+            sep: ':'
+            binary_name: IndexOrder
+            asset_name: IndexOrder-Linux
           - os: macos-latest
-            sep: ':'   # Mac uses colon
-            name: IndexOrder
-            mime: application/x-mach-binary
+            sep: ':'
+            binary_name: IndexOrder
+            asset_name: IndexOrder-macOS
 
     steps:
     - name: Checkout Code
@@ -40,12 +44,17 @@ jobs:
         pip install PySide6 pyinstaller
 
     - name: Build Application
-      # We use the ${{ matrix.sep }} variable to handle the ; vs : difference
       run: |
         pyinstaller --noconsole --onefile --name "IndexOrder" --add-data "app_ui.ui${{ matrix.sep }}." --add-data "indexorderico.png${{ matrix.sep }}." main.py
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+    # Rename the output file to include the OS name (e.g., IndexOrder-Windows.exe)
+    - name: Rename Output
+      run: |
+        mv dist/${{ matrix.binary_name }} dist/${{ matrix.asset_name }}
+
+    # Create the Release and upload the file
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
       with:
-        name: IndexOrder-${{ matrix.os }}
-        path: dist/${{ matrix.name }}
+        files: dist/${{ matrix.asset_name }}
