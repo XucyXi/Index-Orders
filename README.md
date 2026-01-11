@@ -82,4 +82,4 @@ pyinstaller --noconsole --onefile --add-data "app_ui.ui;." --add-data "indexorde
 ```
 
 ## License
----
+__MIT LICENSE__
