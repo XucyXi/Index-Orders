@@ -4,8 +4,9 @@ import random
 import os
 import ctypes
 from PySide6.QtWidgets import (QApplication, QMainWindow, QDialog, QVBoxLayout, 
-                               QLabel, QPushButton, QMessageBox, QListWidgetItem) # <--- Added QListWidgetItem
-from PySide6.QtCore import Qt
+                               QLabel, QPushButton, QMessageBox, QListWidgetItem,
+                               QListView)
+from PySide6.QtCore import Qt, QObject, QEvent
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtGui import QIcon
 
@@ -18,6 +19,28 @@ def resource_path(relative_path):
     
     return os.path.join(base_path, relative_path)
 
+# --- HELPER CLASS: DRAG FILTER ---
+class DragFilter(QObject):
+    def __init__(self, target_window):
+        super().__init__()
+        self.target = target_window
+        self.drag_start_pos = None
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.MouseButtonPress:
+            if event.button() == Qt.LeftButton:
+                # Only allow drag if clicking the TOP area (Header) suggests < 60px
+                if event.pos().y() < 60: 
+                    self.drag_start_pos = event.globalPosition().toPoint() - self.target.frameGeometry().topLeft()
+                    return False 
+        elif event.type() == QEvent.MouseMove:
+            if self.drag_start_pos and event.buttons() == Qt.LeftButton:
+                self.target.move(event.globalPosition().toPoint() - self.drag_start_pos)
+                return True
+        elif event.type() == QEvent.MouseButtonRelease:
+            self.drag_start_pos = None
+        return False
+
 # --- Constants ---
 JSON_FILE = "orders.json"
 
@@ -27,15 +50,13 @@ class OrderCard(QDialog):
         super().__init__()
         self.setWindowTitle("New Order Received")
         self.setFixedSize(400, 500)
-        
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         
-        # Apply "Card" Styling
         self.setStyleSheet("""
             QDialog {
                 background-color: #000000;
                 border: 2px solid #FFFFFF; 
-                border-radius: 15px;
+                border-radius: 20px; /* All corners rounded for the card */
             }
             QLabel {
                 color: #FFFFFF;
@@ -51,27 +72,25 @@ class OrderCard(QDialog):
                 font-family: 'Footlight MT';
             }
             QPushButton:hover {
-                background-color: #444;
+                background-color: #ffffff;
+                color: #000000;
             }
         """)
 
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        # Title
         title = QLabel("【 ORDER ARRIVED 】")
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("font-size: 30px; color: #FFFFFF; font-family: 'Footlight MT'")
+        title.setStyleSheet("font-size: 30px; color: #FFFFFF; font-family: 'Footlight MT'; border: none;")
         layout.addWidget(title)
 
-        # The Order Text
         self.lbl_order = QLabel(order_text)
         self.lbl_order.setAlignment(Qt.AlignCenter)
         self.lbl_order.setWordWrap(True)
-        self.lbl_order.setStyleSheet("font-size: 28px; padding: 20px;")
+        self.lbl_order.setStyleSheet("font-size: 28px; padding: 20px; border: none;")
         layout.addWidget(self.lbl_order)
 
-        # Close Button
         btn_close = QPushButton("Acknowledge")
         btn_close.setCursor(Qt.PointingHandCursor)
         btn_close.clicked.connect(self.accept) 
@@ -82,158 +101,137 @@ class IndexOrderApp(QMainWindow):
     def __init__(self):
         super().__init__()
         
-        # Load UI
         loader = QUiLoader()
-
         self.ui = loader.load(resource_path("app_ui.ui"), None)
         self.ui.setWindowIcon(QIcon(resource_path("indexorderico.png")))
-        self.ui.show()
+        
+        # --- 1. FRAMELESS & SHAPE SETUP ---
+        self.ui.setWindowFlags(Qt.FramelessWindowHint)
+        # Turn translucency back ON so the square corners are invisible
+        self.ui.setAttribute(Qt.WA_TranslucentBackground)
 
+        # --- APPLY SPECIFIC CORNER ROUNDING ---
+        # We inject CSS to define exactly which corners are round.
+        # We add a subtle dark border (#222) to make the edges smoother.
+        self.ui.setStyleSheet(self.ui.styleSheet() + """
+            QMainWindow {
+                background-color: black;
+                border-top-left-radius: 0px;
+                border-top-right-radius: 30px;
+                border-bottom-right-radius: 30px;
+                border-bottom-left-radius: 30px;
+                border: 2px solid #222; 
+            }
+        """)
+
+        # --- 2. INSTALL DRAG FILTER ---
+        self.drag_filter = DragFilter(self.ui)
+        self.ui.tabWidget.installEventFilter(self.drag_filter)
+        self.ui.tabWidget.tabBar().installEventFilter(self.drag_filter)
+
+        # --- 3. CUSTOM CLOSE BUTTON ---
+        self.btn_close_app = QPushButton("✕")
+        self.btn_close_app.setFixedSize(40, 30)
+        self.btn_close_app.setCursor(Qt.PointingHandCursor)
+        self.btn_close_app.clicked.connect(self.ui.close)
+        
+        self.btn_close_app.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                color: #888; font-weight: bold; font-size: 16px; border: none;
+                 /* Adjust padding to fit the rounded top-right corner nicer */
+                padding-right: 10px;
+            }
+            QPushButton:hover { color: white; }
+        """)
+        
+        self.ui.tabWidget.setCornerWidget(self.btn_close_app, Qt.TopRightCorner)
+
+        # --- 4. UI SETUP ---
         self.ui.tabWidget.setCurrentIndex(0)
-
-        # Connect Tab 1 (Home) Buttons
         self.ui.btn_generate.clicked.connect(self.generate_random_order)
-
-        # Connect Tab 2 (Orders) Buttons
         self.ui.btn_add.clicked.connect(self.add_order)
         self.ui.btn_delete.clicked.connect(self.delete_order)
 
-        # Initial Load
+        # List Widget Fixes
+        self.ui.list_orders.setWordWrap(True)
+        self.ui.list_orders.setWrapping(False)
+        self.ui.list_orders.setResizeMode(QListView.Adjust)
+
+        # --- 5. DATA LOAD ---
         self.orders = {"combat": [], "narrative": []}
         self.load_orders()
-
-    def load_orders(self):
-        """Loads orders and safely converts old lists to the new dictionary format."""
-        self.ui.list_orders.clear()
         
+        self.ui.show()
+
+    # --- DATA LOGIC ---
+    def load_orders(self):
+        self.ui.list_orders.clear()
         if os.path.exists(JSON_FILE):
             with open(JSON_FILE, "r") as f:
                 try:
                     loaded_data = json.load(f)
-                    
                     if isinstance(loaded_data, list):
-                        # MIGRATION: Old list detected
                         self.orders["narrative"] = loaded_data
                         self.orders["combat"] = []
                         self.save_orders() 
                     elif isinstance(loaded_data, dict):
-                        # Correct format detected
                         self.orders = loaded_data
-                        
-                except json.JSONDecodeError:
-                    pass
+                except json.JSONDecodeError: pass
         
-        # Populate List
         if "combat" in self.orders:
-            for text in self.orders["combat"]:
-                self.add_item_to_list(text, "combat")
-            
+            for text in self.orders["combat"]: self.add_item_to_list(text, "combat")
         if "narrative" in self.orders:
-            for text in self.orders["narrative"]:
-                self.add_item_to_list(text, "narrative")
+            for text in self.orders["narrative"]: self.add_item_to_list(text, "narrative")
 
     def save_orders(self):
-        """Saves current memory list to JSON."""
-        with open(JSON_FILE, "w") as f:
-            json.dump(self.orders, f, indent=4)
+        with open(JSON_FILE, "w") as f: json.dump(self.orders, f, indent=4)
 
-    # --- LOVELY HELPER FUNCTION RESTORED ---
     def add_item_to_list(self, text, category):
-        """Creates a list item with a visual tag and hidden data for logic."""
-        # Visual Tag
-        if category == "combat":
-            display_text = f"[COMBAT] {text}"
-        else:
-            display_text = f"[STORY] {text}"
-        
-        item = QListWidgetItem(display_text)
-        
-        # HIDDEN DATA (Crucial for Deleting!)
-        # We store the original text and category inside the item itself
+        prefix = "[COMBAT]" if category == "combat" else "[STORY]"
+        item = QListWidgetItem(f"{prefix} {text}")
         item.setData(Qt.UserRole, {"text": text, "category": category})
-        
         self.ui.list_orders.addItem(item)
 
     def add_order(self):
-        """Adds text from input box to the selected category."""
         text = self.ui.input_new_order.text().strip()
-        if not text:
-            return
-
-        # Get Category from Dropdown
+        if not text: return
         category_text = self.ui.combo_add_mode.currentText().lower() 
-        
-        # Add to memory
-        if category_text not in self.orders:
-            self.orders[category_text] = []
+        if category_text not in self.orders: self.orders[category_text] = []
         self.orders[category_text].append(text)
-        
-        # Add to UI
         self.add_item_to_list(text, category_text)
-        
-        # Clear and Save
         self.ui.input_new_order.clear()
         self.save_orders()
 
     def delete_order(self):
-        """Deletes the selected item using Hidden Data."""
         selected_items = self.ui.list_orders.selectedItems()
-        if not selected_items:
-            return
-        
+        if not selected_items: return
         for item in selected_items:
-            # 1. Retrieve the hidden data
             data = item.data(Qt.UserRole)
-            
-            # If for some reason data is missing (old items), skip
-            if not data:
-                continue
-
-            real_text = data["text"]
-            category = data["category"]
-
-            # 2. Remove from the Dictionary (Memory)
-            if category in self.orders and real_text in self.orders[category]:
-                self.orders[category].remove(real_text)
-            
-            # 3. Remove from UI
+            if not data: continue
+            if data["text"] in self.orders.get(data["category"], []):
+                self.orders[data["category"]].remove(data["text"])
             self.ui.list_orders.takeItem(self.ui.list_orders.row(item))
-        
         self.save_orders()
 
     def generate_random_order(self):
-        """Picks a random order based on dropdown selection."""
-        
-        mode = self.ui.combo_gen_mode.currentText() # "Any", "Combat", "Narrative"
-        
+        mode = self.ui.combo_gen_mode.currentText()
         pool = []
-        
         if mode == "Any":
             pool.extend(self.orders.get("combat", []))
             pool.extend(self.orders.get("narrative", []))
-            
-        elif mode == "Combat":
-            pool.extend(self.orders.get("combat", []))
-            
-        elif mode == "Narrative":
-            pool.extend(self.orders.get("narrative", []))
+        elif mode == "Combat": pool.extend(self.orders.get("combat", []))
+        elif mode == "Narrative": pool.extend(self.orders.get("narrative", []))
 
         if not pool:
-            QMessageBox.warning(self.ui, "Empty Deck", f"No {mode} cards found!\nGo to the Prescripts tab and add some.")
+            QMessageBox.warning(self.ui, "Empty Deck", f"No {mode} cards found!")
             return
-
-        chosen_order = random.choice(pool)
-        card_window = OrderCard(chosen_order)
-        card_window.exec()
+        OrderCard(random.choice(pool)).exec()
 
 if __name__ == "__main__":
     myappid = 'dnd.indexorders.app.v1'
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-
     app = QApplication(sys.argv)
-
-    icon_path = resource_path("indexorderico.png")
-    app.setWindowIcon(QIcon(icon_path))
-
+    app.setWindowIcon(QIcon(resource_path("indexorderico.png")))
     window = IndexOrderApp()
     sys.exit(app.exec())

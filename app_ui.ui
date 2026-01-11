@@ -35,6 +35,7 @@ QMainWindow {
 QTabWidget::pane {
     border: 1px solid #333; /* Subtle dark border around content */
     top: -1px; /* Merges border with tab bar */
+	background-color: black;
 }
 QTabBar::tab {
     background: #0d0d0d;
@@ -75,8 +76,7 @@ QPushButton {
 }
 QPushButton:hover {
     background-color: white; /* Invert colors on hover */
-    color: black;
-    border: 2px solid white;
+    border: 2px solid rgb(62, 62, 62);
 }
 QPushButton:pressed {
     background-color: #ccc; /* Light grey when clicked */
@@ -184,6 +184,28 @@ QComboBox QAbstractItemView {
     selection-background-color: white;
     selection-color: black;
     outline: none;
+}
+
+/* --- NEW CARD --- */
+
+.overlay-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* This creates a perfect center axis */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.new-order-card {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  /* This pulls the element back by half its own width/height to center it perfectly */
+  transform: translate(-50%, -50%);
 }</string>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -209,10 +231,12 @@ QComboBox QAbstractItemView {
        <enum>Qt::LayoutDirection::LeftToRight</enum>
       </property>
       <property name="styleSheet">
-       <string notr="true">font: 300 12pt &quot;Footlight MT&quot;;</string>
+       <string notr="true">font: 300 12pt &quot;Footlight MT&quot;;
+background-color: rgb(0, 0, 0);
+</string>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab_3">
        <attribute name="title">
