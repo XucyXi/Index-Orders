@@ -26,7 +26,165 @@
    <string>Index Order</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">background-color: rgb(0, 0, 0);</string>
+   <string notr="true">/* --- MAIN WINDOW BACKGROUND --- */
+QMainWindow {
+    background-color: black;
+}
+
+/* --- TABS --- */
+QTabWidget::pane {
+    border: 1px solid #333; /* Subtle dark border around content */
+    top: -1px; /* Merges border with tab bar */
+}
+QTabBar::tab {
+    background: #0d0d0d;
+    color: #666; /* Darker grey for inactive tabs */
+    padding: 10px 20px;
+    font-family: &quot;Footlight MT&quot;;
+    font-size: 14pt;
+    border: 1px solid #333;
+    border-bottom: none;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    margin-right: 2px;
+}
+QTabBar::tab:selected {
+    background: black;
+    color: white;
+    border-top: 2px solid white; /* White line on active tab */
+    border-bottom: 1px solid black; /* Blends with background */
+}
+QTabBar::tab:hover {
+    color: #bbb; /* Light grey on hover */
+}
+
+/* --- LABELS (Headings) --- */
+QLabel {
+    color: white;
+    font-family: &quot;Footlight MT&quot;;
+}
+
+/* --- BUTTONS (Global Style) --- */
+QPushButton {
+    font: 300 18pt &quot;Footlight MT&quot;;
+   	border: 2px solid rgb(31, 31, 31);   /* You need a border to see the curve clearly */
+	border-radius: 15px;      /* Higher number = rounder corners */
+	padding: 5px 10px;        /* Adds space inside so text doesn't hit the curve */
+	color: white;
+	background-color: rgb(13, 13, 13);
+}
+QPushButton:hover {
+    background-color: white; /* Invert colors on hover */
+    color: black;
+    border: 2px solid white;
+}
+QPushButton:pressed {
+    background-color: #ccc; /* Light grey when clicked */
+    color: black;
+}
+
+/* --- INPUT FIELDS &amp; LISTS --- */
+QLineEdit, QListWidget {
+    background-color: rgb(13, 13, 13);
+    color: white;
+    border: 2px solid #555;
+    border-radius: 10px;
+    font-family: &quot;Footlight MT&quot;;
+    font-size: 14pt;
+    padding: 5px;
+    selection-background-color: white;
+    selection-color: black;
+}
+QLineEdit:focus, QListWidget:focus {
+    border: 2px solid white; /* White Highlight when typing */
+}
+
+/* --- RADIO BUTTONS --- */
+QGroupBox {
+    color: white;
+    font-family: &quot;Footlight MT&quot;;
+    font-size: 12pt;
+    border: 1px solid #333;
+    border-radius: 5px;
+    margin-top: 20px;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 3px;
+    color: white; 
+}
+QRadioButton {
+    color: white;
+    font-size: 14pt;
+    font-family: &quot;Footlight MT&quot;;
+    spacing: 10px;
+}
+QRadioButton::indicator {
+    width: 14px;
+    height: 14px;
+    border-radius: 8px;
+    border: 2px solid #777;
+    background: transparent;
+}
+QRadioButton::indicator:checked {
+    background-color: white; /* White Fill */
+    border: 2px solid white;
+}
+QRadioButton::indicator:hover {
+    border: 2px solid #aaa;
+}
+
+/* --- SCROLL BAR (Optional: Makes it dark instead of standard Windows grey) --- */
+QScrollBar:vertical {
+    border: none;
+    background: black;
+    width: 10px;
+    margin: 0px;
+}
+QScrollBar::handle:vertical {
+    background: #444;
+    min-height: 20px;
+    border-radius: 5px;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QComboBox {
+    background-color: rgb(13, 13, 13);
+    color: white;
+    border: 2px solid rgb(31, 31, 31);
+    border-radius: 10px;
+    padding: 5px 15px; /* Extra padding on right for arrow */
+    font-family: &quot;Footlight MT&quot;;
+    font-size: 14pt;
+}
+
+QComboBox::drop-down {
+    border: none;
+    background: transparent;
+    width: 30px;
+}
+
+/* The arrow icon */
+QComboBox::down-arrow {
+    image: none;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 7px solid white; /* Draws a white triangle */
+    margin-right: 10px;
+}
+
+/* The popup list */
+QComboBox QAbstractItemView {
+    background-color: rgb(13, 13, 13);
+    color: white;
+     border: 2px solid rgb(31, 31, 31);
+    selection-background-color: white;
+    selection-color: black;
+    outline: none;
+}</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -95,7 +253,7 @@
          <cursorShape>PointingHandCursor</cursorShape>
         </property>
         <property name="mouseTracking">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="styleSheet">
          <string notr="true">font: 300 20pt &quot;Footlight MT&quot;;
@@ -105,6 +263,31 @@ background-color: rgb(13, 13, 13);
         <property name="text">
          <string>New Order ///</string>
         </property>
+       </widget>
+       <widget class="QComboBox" name="combo_gen_mode">
+        <property name="geometry">
+         <rect>
+          <x>350</x>
+          <y>500</y>
+          <width>291</width>
+          <height>41</height>
+         </rect>
+        </property>
+        <item>
+         <property name="text">
+          <string>Any</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Combat</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Narrative</string>
+         </property>
+        </item>
        </widget>
       </widget>
       <widget class="QWidget" name="tab_4">
@@ -157,8 +340,8 @@ border: none;</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>958</width>
-             <height>398</height>
+             <width>962</width>
+             <height>394</height>
             </rect>
            </property>
            <layout class="QHBoxLayout" name="horizontalLayout">
@@ -272,6 +455,20 @@ padding: 5px 10px;        /* Adds space inside so text doesn't hit the curve */
             </widget>
            </item>
            <item>
+            <widget class="QComboBox" name="combo_add_mode">
+             <item>
+              <property name="text">
+               <string>Combat</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Narrative</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
             <spacer name="horizontalSpacer_4">
              <property name="orientation">
               <enum>Qt::Orientation::Horizontal</enum>
@@ -325,8 +522,8 @@ padding: 5px 10px;        /* Adds space inside so text doesn't hit the curve */
             <widget class="QPushButton" name="btn_delete">
              <property name="minimumSize">
               <size>
-               <width>400</width>
-               <height>60</height>
+               <width>300</width>
+               <height>50</height>
               </size>
              </property>
              <property name="maximumSize">
@@ -339,11 +536,12 @@ padding: 5px 10px;        /* Adds space inside so text doesn't hit the curve */
               <cursorShape>PointingHandCursor</cursorShape>
              </property>
              <property name="styleSheet">
-              <string notr="true">font: 300 18pt &quot;Footlight MT&quot;;
-border: 2px solid white;   /* You need a border to see the curve clearly */
+              <string notr="true">font: 300 15pt &quot;Footlight MT&quot;;
+border: 2px solid rgb(31, 31, 31);   /* You need a border to see the curve clearly */
 border-radius: 15px;      /* Higher number = rounder corners */
 padding: 5px 10px;        /* Adds space inside so text doesn't hit the curve */
-color: white;</string>
+color: white;
+background-color: rgb(13, 13, 13);</string>
              </property>
              <property name="text">
               <string>Delete Selected Prescript</string>
@@ -367,8 +565,8 @@ color: white;</string>
             <widget class="QPushButton" name="btn_add">
              <property name="minimumSize">
               <size>
-               <width>400</width>
-               <height>60</height>
+               <width>300</width>
+               <height>50</height>
               </size>
              </property>
              <property name="maximumSize">
@@ -381,11 +579,12 @@ color: white;</string>
               <cursorShape>PointingHandCursor</cursorShape>
              </property>
              <property name="styleSheet">
-              <string notr="true">font: 300 18pt &quot;Footlight MT&quot;;
-border: 2px solid white;   /* You need a border to see the curve clearly */
+              <string notr="true">font: 300 15pt &quot;Footlight MT&quot;;
+border: 2px solid rgb(31, 31, 31);   /* You need a border to see the curve clearly */
 border-radius: 15px;      /* Higher number = rounder corners */
 padding: 5px 10px;        /* Adds space inside so text doesn't hit the curve */
-color: white;</string>
+color: white;
+background-color: rgb(13, 13, 13);</string>
              </property>
              <property name="text">
               <string>Add a Prescript</string>

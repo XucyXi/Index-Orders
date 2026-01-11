@@ -9,6 +9,15 @@ from PySide6.QtCore import Qt
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtGui import QIcon
 
+def resource_path(relative_path):
+        """ Get absolute path to resource, works for dev and for PyInstaller """
+        try:
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
+        
+        return os.path.join(base_path, relative_path)
+
 # --- Constants ---
 JSON_FILE = "orders.json"
 
@@ -19,8 +28,6 @@ class OrderCard(QDialog):
         self.setWindowTitle("New Order Received")
         self.setFixedSize(400, 500)
         
-        # Remove standard window frame for a cool "floating card" look
-        # (Optional: Comment this out if you want the close 'X' button)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         
         # Apply "Card" Styling
@@ -35,9 +42,9 @@ class OrderCard(QDialog):
                 font-family: 'Footlight MT';
             }
             QPushButton {
-                background-color: #000000;
+                background-color: rgb(13, 13, 13);
                 color: #FFFFFF;
-                border: 1px solid white;
+                border: 1px solid rgb(31, 31, 31);
                 padding: 8px;
                 border-radius: 5px;
                 font-size: 20px;
@@ -77,9 +84,9 @@ class IndexOrderApp(QMainWindow):
         
         # Load UI
         loader = QUiLoader()
-        # MAKE SURE THIS MATCHES YOUR UI FILENAME
-        self.ui = loader.load("app_ui.ui", None) 
-        self.setWindowIcon(QIcon("indexorderico.png"))
+
+        self.ui = loader.load(resource_path("app_ui.ui"), None)
+        self.ui.setWindowIcon(QIcon(resource_path("indexorderico.png")))
         self.ui.show()
 
         self.ui.tabWidget.setCurrentIndex(0)
@@ -156,7 +163,8 @@ if __name__ == "__main__":
 
     app = QApplication(sys.argv)
 
-    app.setWindowIcon(QIcon("indexorderico.png"))
-    
+    icon_path = resource_path("indexorderico.png")
+    app.setWindowIcon(QIcon(icon_path))
+
     window = IndexOrderApp()
     sys.exit(app.exec())
