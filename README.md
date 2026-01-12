@@ -1,10 +1,13 @@
 # 【 Index Order 】 Application
 
+<div align="center">
+    <img width="700px" src="https://i.imgur.com/Z0xiE8O.png" alt="Image of Application">
+</div>
+
 ## Overview
 Index Order is a desktop application developed using Python and PySide6 (Qt). It functions as a randomized generator and management tool for "Prescripts" (Orders), designed for tabletop narrative or combat scenarios. The application features a custom, frameless user interface with persistent JSON data storage.
 
 ## Features
-
 ### Core Functionality
 * **Random Generation:** Generates random orders based on user-selected categories (Combat, Narrative, or Any).
 * **Data Management:** Provides a CRUD (Create, Read, Update, Delete) interface to manage the database of orders.
